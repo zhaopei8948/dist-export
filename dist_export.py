@@ -193,7 +193,7 @@ def outExportInOrderTemplate(token, billNo):
     print("fileName is: {}".format(fileName))
     wb = xlsxwriter.Workbook(os.path.join(xlsxDir, fileName))
 
-    companyCode = redisCon.get(token).decode()
+    companyCode = redisCon.get(token)
 
     sht1 = wb.add_worksheet('Sheet1')
     sht1.write_string(0, 0, '订单编号')
@@ -209,6 +209,8 @@ def outExportInOrderTemplate(token, billNo):
         sht1.write_string(1, 0, 'token不存在，请联系管理员，申请开通')
         wb.close()
         return send_from_directory(xlsxDir, fileName, as_attachment=True)
+
+    companyCode = companyCode.decode()
 
     sql = '''
     select t.order_no, t.ebp_code
@@ -261,7 +263,7 @@ def outExportOutOrderTemplate(token, billNo):
     print("fileName is: {}".format(fileName))
     wb = xlsxwriter.Workbook(os.path.join(xlsxDir, fileName))
 
-    companyCode = redisCon.get(token).decode()
+    companyCode = redisCon.get(token)
 
     sht1 = wb.add_worksheet('Sheet1')
     sht1.write_string(0, 0, '订单编号')
@@ -278,6 +280,8 @@ def outExportOutOrderTemplate(token, billNo):
         sht1.write_string(1, 0, 'token不存在，请联系管理员，申请开通')
         wb.close()
         return send_from_directory(xlsxDir, fileName, as_attachment=True)
+
+    companyCode = companyCode.decode()
 
     sql = '''
     select t.order_no, t.ebp_code
