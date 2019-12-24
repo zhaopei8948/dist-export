@@ -326,5 +326,52 @@ def outExportOutOrderTemplate(token, billNo):
     wb.close()
     return send_from_directory(xlsxDir, fileName, as_attachment=True)
 
+@bpout.route('/exportlogisticsgoods/<token>/<billNo>', methods=['GET'])
+def logisticsGoodsInfo(token, billNo):
+    now = datetime.now()
+    xlsxDir = "export"
+    fileName = "{}_{}_logistics_goods.xlsx".format(billNo, now.strftime('%Y%m%d%H%M%S'))
+    print("fileName is: {}".format(fileName))
+    wb = xlsxwriter.Workbook(os.path.join(xlsxDir, fileName))
+
+    companyCode = redisCon.get(token)
+
+    sht1 = wb.add_worksheet(billNo)
+    sht1.write_string(0, 0, '运单号')
+    sht1.write_string(0, 1, '品名')
+    sht1.write_string(0, 2, '数量')
+    sht1.write_string(0, 3, '总价')
+
+    if companyCode is None:
+        sht1.write_string(1, 0, 'token不存在，请联系管理员，申请开通')
+        wb.close()
+        return send_from_directory(xlsxDir, fileName, as_attachment=True)
+
+    companyCode = companyCode.decode()
+
+    sql = '''
+    select t.logistics_no, t1.g_name, t1.qty, t1.total_price
+    from ceb3_invt_head t
+    inner join ceb3_invt_list t1 on t1.head_guid = t.head_guid
+    where t.app_status in ('800', '899')
+    and t.bill_no = :billNo
+    and (t.ebc_code = :ebcCode
+    or t.ebp_code = :ebpCode
+    or t.logistics_code = :logisticsCode
+    or t.agent_code = :agentCode)
+    '''
+    result = executeSql(sql, billNo=billNo, ebcCode=companyCode, ebpCode=companyCode, logisticsCode=companyCode, agentCode=companyCode)
+
+    row = 1
+    for invt in result:
+        sht1.write_string(row, 0, invt[0])
+        sht1.write_string(row, 1, invt[1])
+        sht1.write_number(row, 2, invt[2])
+        sht1.write_number(row, 3, invt[3])
+        row = row + 1
+
+    wb.close()
+    return send_from_directory(xlsxDir, fileName, as_attachment=True)
+
 app.register_blueprint(bpin)
 app.register_blueprint(bpout)
